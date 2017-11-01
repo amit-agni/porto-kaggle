@@ -70,13 +70,48 @@ ggsave("./output/boxplot 01Nov17.jpg")
 
 ```
 
-Extract categorial and variables with binary values and plot histograms
+Extract values with Categorical variables and plot histograms
 
 ```{r}
 
-categorical_variables <- variables[grepl("bin",variables) | grepl("cat",variables)]
+binary_variables <- variables[grepl("bin",variables)]
 
-head(dataset[,categorical_variables])
+#When you group by multiple variables, each summary peels off one level of the grouping. 
+#That makes it easy to progressively roll-up a dataset".
+
+temp <- gather(dataset[,binary_variables]) %>%
+    group_by(key,value) %>%
+    summarise(count = n()) %>%
+    mutate(count_pct = count/sum(count)) 
+
+write.csv(temp, "./output/EDA_binary_variables_count_01Nov17.csv")
+
+#gather(head(dataset[,categorical_variables]))
+
+ggplot(gather(dataset[,binary_variables])) +
+    geom_bar(aes(x=value)) +
+    facet_wrap(~key,scales = "free") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1,size=5),
+          axis.text.y = element_text(angle = 45, hjust = 1,size=5),
+          strip.text.x = element_text(size=5),
+          strip.text.y = element_text(size=5))
+
+ggsave("./output/EDA_histogram_binary_01Nov17.jpg")
+
+#table(head(dataset[,categorical_variables]))
+
+
+```
+
+
+Extract variables with binary values and plot histograms
+
+
+```{r}
+
+categorical_variables <- variables[grepl("cat",variables)]
+
+#head(dataset[,categorical_variables])
 
 #When you group by multiple variables, each summary peels off one level of the grouping. 
 #That makes it easy to progressively roll-up a dataset".
@@ -86,28 +121,23 @@ temp <- gather(dataset[,categorical_variables]) %>%
     summarise(count = n()) %>%
     mutate(count_pct = count/sum(count)) 
 
-write.csv(temp, "./output/EDA_categorical_variables_count 01Nov17.csv")
+write.csv(temp, "./output/EDA_categorical_variables_count_01Nov17.csv")
 
 #gather(head(dataset[,categorical_variables]))
 
 ggplot(gather(dataset[,categorical_variables])) +
     geom_bar(aes(x=value)) +
     facet_wrap(~key,scales = "free") +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1,size=7),
-          axis.text.y = element_text(angle = 45, hjust = 1,size=7),
-          strip.text.x = element_text(size=7),
-          strip.text.y = element_text(size=7))
+    theme(axis.text.x = element_text(angle = 45, hjust = 1,size=5),
+          axis.text.y = element_text(angle = 45, hjust = 1,size=5),
+          strip.text.x = element_text(size=5),
+          strip.text.y = element_text(size=5))
 
-ggsave("./output/EDA_histogram_categorical 01Nov17.jpg")
+ggsave("./output/EDA_histogram_categorical_01Nov17.jpg")
 
-
-    
-
-table(head(dataset[,categorical_variables]))
 
 
 ```
-
 
 
 The non observed values are supposed to have -1. Lets check them, how many of them are there (in the whole train set)
