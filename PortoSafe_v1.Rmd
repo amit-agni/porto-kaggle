@@ -58,7 +58,7 @@ ggplot(gather(dataset[,continuous_variables])) +
           axis.text.y = element_text(angle = 45, hjust = 1,size=7),
           strip.text.x = element_text(size=7),
           strip.text.y = element_text(size=7))
-ggsave("./output/histogram 01Nov17.jpg")
+ggsave("./output/histogram_continuous 01Nov17.jpg")
 
 ggplot(gather(dataset[,continuous_variables])) +
     geom_boxplot(aes(x=key,y=value)) +
@@ -75,8 +75,33 @@ Extract categorial and variables with binary values and plot histograms
 ```{r}
 
 categorical_variables <- variables[grepl("bin",variables) | grepl("cat",variables)]
+
 head(dataset[,categorical_variables])
 
+#When you group by multiple variables, each summary peels off one level of the grouping. 
+#That makes it easy to progressively roll-up a dataset".
+
+temp <- gather(dataset[,categorical_variables]) %>%
+    group_by(key,value) %>%
+    summarise(count = n()) %>%
+    mutate(count_pct = count/sum(count)) 
+
+write.csv(temp, "./output/EDA_categorical_variables_count 01Nov17.csv")
+
+#gather(head(dataset[,categorical_variables]))
+
+ggplot(gather(dataset[,categorical_variables])) +
+    geom_bar(aes(x=value)) +
+    facet_wrap(~key,scales = "free") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1,size=7),
+          axis.text.y = element_text(angle = 45, hjust = 1,size=7),
+          strip.text.x = element_text(size=7),
+          strip.text.y = element_text(size=7))
+
+ggsave("./output/EDA_histogram_categorical 01Nov17.jpg")
+
+
+    
 
 table(head(dataset[,categorical_variables]))
 
