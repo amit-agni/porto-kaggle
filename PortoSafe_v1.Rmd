@@ -21,7 +21,7 @@ test <- read.csv("./input/test.csv",header = TRUE)
 
 ```
 
-Check whether train and test names are same. 
+Check whether train and test names are same and then combine them
 ```{r}
 names(train)
 names(test)
@@ -30,6 +30,11 @@ names(train[,-2]) == names(test)
 #Combine train and test
 dataset <- rbind(train[,-2],test)
 
+```
+
+Generate summary stats using describe
+
+```{r}
 str(dataset)
 summary(dataset)
 library(psych)
@@ -37,7 +42,6 @@ describe(dataset,IQR=TRUE, quant = c(0.25,0.75))
 write.csv(describe(dataset,IQR=TRUE, quant = c(0.25,0.75)),"./output/describe.csv")
 
 ```
-
 
 Separate continuous and categorical variables. Plot box plots and histograms of the continuous variables
 ```{r}
