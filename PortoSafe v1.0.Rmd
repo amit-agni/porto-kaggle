@@ -1,0 +1,150 @@
+---
+title: "Porto Safe "
+output: html_notebook
+---
+
+TRY THIS : https://www.r-bloggers.com/missing-value-treatment/
+
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+
+
+
+
+
+
+```{r message=FALSE, warning=FALSE, echo=FALSE}
+rm(list=ls())
+gc()
+library(caret)
+setwd("/Mac Backup/OneDrive/R 2017/Kaggle/Porto Safe Driver")
+setwd("C:/Amit/OneDrive/R 2017/Kaggle/Porto Safe Driver")
+
+#Get data from CSV
+train <- read.csv("train.csv",header = TRUE)
+#test <- read.csv("test.csv",header = TRUE)
+
+#Use a smaller dataset for trialing the end to end regression
+#Imputation with knn using the original set taking very long time
+#Split around 10000 rows
+
+dim(train)
+split<-createDataPartition(train$id, p = 0.01, list = FALSE)
+dataset<-train[split,]
+dim(dataset)
+
+#val<-mtcars[-split,]
+
+
+
+```
+
+
+
+The non observed values are supposed to have -1. Lets check them, how many of them are there (in the whole train set)
+
+```{r}
+dim(train)
+#Actual missing
+sapply(train, function(x) sum(x == -1) )
+#Percentage
+sapply(train, function(x) format(100* (sum(x == -1) / 595212), digits = 3))
+
+```
+
+There are quite a few null observations in 
+ps_ind_05_cat 1%
+ps_reg_03 18%
+ps_car_03_cat 69%
+ps_car_05_cat 45%
+ps_car_07_cat 2%
+ps_car_14 7%
+
+These will have to be imputed. Rest are small percentages and can be ignored at this stage.
+Source : https://www.analyticsvidhya.com/blog/2016/12/practical-guide-to-implement-machine-learning-with-caret-package-in-r-with-practice-problem/
+Lets impute the sample dataset using kNN
+
+```{r}
+
+#Convert the non-observed values to NA (as required by kNN preProcess)
+dataset[dataset == -1] <- NA
+#Recheck the percentages
+sapply(dataset, function(x) sum(is.na(x)))
+
+#Remove Id
+dataset$id <- NULL
+names(dataset)
+
+
+
+
+#Imputing missing values using KNN.
+
+#Imputing also scales the data, so remove target from imputation
+temp <- dataset[,-1]
+
+preProcValues <- preProcess(temp, method = c("knnImpute"))
+#install.packages("RANN")
+library(RANN)
+sum(is.na(dataset))
+temp <- predict(preProcValues, temp)
+sum(is.na(dataset))
+#[1] 0
+
+#add the target column back, retain the column name
+
+names(dataset)
+dataset <- cbind(dataset[,1,drop = FALSE],temp)
+colnames(dataset[,"dataset[,1]"]) <- "target"
+
+
+
+```
+
+Set the parameters for caret
+
+```{r}
+names(dataset)
+str(dataset)
+
+control <- trainControl(method="repeatedcv", number=5, repeats=1)
+seed <- 7
+
+class(seed)
+
+metric <- "Accuracy"
+
+#Some models needs Scaling
+preProcess=c("center", "scale")
+
+```
+
+Now try the logistic regression 
+
+```{r}
+# Logistic Regression
+#glm is expecting target to be factor to do classification
+#Still giving : prediction from a rank-deficient fit may be misleading
+dataset$target <- as.factor(dataset$target)
+
+set.seed(seed)
+fit.glm <- train(target~., data=dataset, method="glm", metric=metric, trControl=control)
+```
+
+use only 2 variables
+```{r}
+
+names(dataset)
+str(dataset)
+fit.glm <- train(target~ps_ind_01+ps_ind_03, data=dataset, method="glm", metric=metric, trControl=control)
+
+```
+
+
+
+
+
+
+
+
