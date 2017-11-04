@@ -23,23 +23,41 @@ test <- read.csv("./input/test.csv",header = TRUE)
 
 Check whether train and test names are same and then combine them
 ```{r}
-names(train)
-names(test)
 names(train[,-2]) == names(test)
 
 #Combine train and test
 dataset <- rbind(train[,-2],test)
+rm(train,test)
+gc()
 
 ```
 
-Generate summary stats using describe
+Generate summary stats using describe. Also, cbind it with the missing values (-1)
 
 ```{r}
-str(dataset)
-summary(dataset)
 library(psych)
-describe(dataset,IQR=TRUE, quant = c(0.25,0.75))
-write.csv(describe(dataset,IQR=TRUE, quant = c(0.25,0.75)),"./output/describe.csv")
+
+#Summary stats
+temp1 <- describe(dataset,IQR=TRUE,skew=TRUE, quant = c(0.25,0.50,0.75))
+
+#categorise variables based on their names
+temp2 <- ifelse(grepl("bin",colnames(dataset)),"binary",
+                ifelse(grepl("cat",colnames(dataset)),"categorical","continuous"))
+
+#Missing val count
+temp3 <- sapply(dataset, function(x) sum(x == -1) )
+
+#Missing val pct
+temp4 <- sapply(dataset,function(x) format(100* (sum(x == -1) / nrow(dataset)), 
+                                                 digits = 2))
+
+write.csv(cbind(var_names=rownames(temp1),
+                temp1,
+                var_type=temp2, 
+                missing_val_count = temp3,
+                missing_val_pct = temp4),
+          "./output/describe_with_missing_value_count04Nov17.csv",
+          row.names = FALSE)
 
 ```
 
@@ -138,6 +156,7 @@ ggsave("./output/EDA_histogram_categorical_01Nov17.jpg")
 
 
 ```
+
 
 
 The non observed values are supposed to have -1. Lets check them, how many of them are there (in the whole train set)
